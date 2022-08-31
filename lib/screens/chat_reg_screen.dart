@@ -25,25 +25,6 @@ class _RegScreenState extends State<RegScreen> {
   late Socket socket;
   final box = Hive.box('testBox');
 
-  void startChat() {
-    if (_nameController.text.isNotEmpty) {
-      setState(() {
-        loading = true;
-      });
-      Future.delayed(Duration(seconds: 1), () {
-        setState(() {
-          loading = false;
-        });
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => ChatScreen(
-                      username: _nameController.text.trim(),
-                    )));
-      });
-    }
-  }
-
   @override
   void initState() {
     setState(() {
@@ -73,7 +54,7 @@ class _RegScreenState extends State<RegScreen> {
           if (data != null) {
             try {
               Map<String, dynamic> map = json.decode(data);
-              print(map);
+              debugPrint('Successfully got rooms data');
               setState(() {
                 users = map['results'];
               });
@@ -187,6 +168,11 @@ class _RegScreenState extends State<RegScreen> {
                               subtitle: Text('${item['id']} ${item['connectionId']}'),
                               isThreeLine: true,
                               onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => ChatScreen(
+                                          socket: socket,
+                                          roomId: item['chatroom'][0]['id'],
+                                        )));
                                 debugPrint(item['id']);
                               },
                             ),

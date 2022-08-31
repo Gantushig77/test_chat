@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 import 'package:socket_io_chat_client/models/chat_model.dart';
+import '../provider/user_provider.dart';
 
 class ChatScreen extends StatefulWidget {
-  final String username;
+  final Socket socket;
+  final String roomId;
   const ChatScreen({
     Key? key,
-    required this.username,
+    required this.socket,
+    required this.roomId,
   }) : super(key: key);
 
   @override
@@ -31,15 +35,14 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     try {
-      socket = io("https://blooming-coast-89347.herokuapp.com/", <String, dynamic>{
-        "transports": ["websocket"],
-        "autoConnect": false,
+      socket = widget.socket;
+
+      socket.emitWithAck('joinRoom', {'roomId': widget.roomId}, ack: () {
+        debugPrint('joined to room');
       });
 
-      socket.connect();
-
       socket.on('connect', (data) {
-        debugPrint('connected');
+        debugPrint('chat page connect ...');
         print(socket.connected);
       });
 
@@ -50,7 +53,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       });
 
-      socket.onDisconnect((_) => debugPrint('disconnect'));
+      socket.onDisconnect((_) => debugPrint('chat page disconnect ...'));
     } catch (e) {
       print(e);
     }
@@ -61,6 +64,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     // Size size = MediaQuery.of(context).size;
+    final userProvider = Provider.of<UserProvider>(context, listen: true);
     return Scaffold(
       appBar: AppBar(
           centerTitle: true,
@@ -138,18 +142,20 @@ class _ChatScreenState extends State<ChatScreen> {
                           if (_messageController.text.trim().isNotEmpty) {
                             String message = _messageController.text.trim();
 
-                            socket.emit(
-                                "message",
-                                ChatModel(
+                            socket
+                              ..emit("message", {
+                                "roomId": widget.roomId,
+                                "userId": userProvider.getId(),
+                                ...ChatModel(
                                         id: socket.id,
                                         message: message,
-                                        username: widget.username,
+                                        username: userProvider.getFirstname(),
                                         sentAt: DateTime.now()
                                             .toLocal()
                                             .toString()
                                             .substring(0, 16))
-                                    .toJson());
-
+                                    .toJson()
+                              });
                             _messageController.clear();
                           }
                         },
