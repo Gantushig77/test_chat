@@ -19,7 +19,6 @@ class RegScreen extends StatefulWidget {
 }
 
 class _RegScreenState extends State<RegScreen> {
-  TextEditingController _nameController = TextEditingController();
   bool loading = false;
   List users = [];
   late Socket socket;
@@ -98,7 +97,6 @@ class _RegScreenState extends State<RegScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     super.dispose();
   }
 
@@ -173,7 +171,6 @@ class _RegScreenState extends State<RegScreen> {
                                           socket: socket,
                                           roomId: item['chatroom'][0]['id'],
                                         )));
-                                debugPrint(item['id']);
                               },
                             ),
                           ))

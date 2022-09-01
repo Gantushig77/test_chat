@@ -7,27 +7,35 @@ String chatModelToJson(ChatModel data) => json.encode(data.toJson());
 class ChatModel {
   ChatModel({
     this.id,
-    this.username,
-    this.sentAt,
+    this.room,
+    this.sender,
+    this.receiver,
+    this.createdAt,
     this.message,
   });
 
   String? id;
-  String? username;
-  String? sentAt;
+  String? room;
+  String? sender;
+  String? receiver;
+  String? createdAt;
   String? message;
 
   factory ChatModel.fromJson(Map<String, dynamic> json) => ChatModel(
         id: json["id"],
-        username: json["username"],
-        sentAt: json["sentAt"],
+        room: json["room"],
+        sender: json["sender"],
+        receiver: json["receiver"],
+        createdAt: json["createdAt"],
         message: json["message"],
       );
 
   Map<String, dynamic> toJson() => {
         "id": id,
-        "username": username,
-        "sentAt": sentAt,
+        "room": room,
+        "sender": sender,
+        "receiver": receiver,
+        "createdAt": createdAt,
         "message": message,
       };
 }

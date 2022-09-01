@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 import 'package:socket_io_chat_client/models/chat_model.dart';
@@ -21,6 +22,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<ChatModel> _messages = [];
+  late Socket socket;
+  Map<String, dynamic> room = {};
 
   // final bool _showSpinner = false;
   // final bool _showVisibleWidget = false;
@@ -30,20 +33,20 @@ class _ChatScreenState extends State<ChatScreen> {
     if (mounted) setState(f);
   }
 
-  late Socket socket;
-
   @override
   void initState() {
     try {
       socket = widget.socket;
 
-      socket.emitWithAck('joinRoom', {'roomId': widget.roomId}, ack: () {
-        debugPrint('joined to room');
-      });
+      socket.emitWithAck('joinRoom', {'roomId': widget.roomId}, ack: (data) {
+        setState(() {
+          room = data['room'];
+        });
 
-      socket.on('connect', (data) {
-        debugPrint('chat page connect ...');
-        print(socket.connected);
+        debugPrint('joined to room');
+        debugPrint(data.toString());
+        debugPrint('room info');
+        debugPrint(room.toString());
       });
 
       socket.on('message', (data) {
@@ -63,13 +66,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Size size = MediaQuery.of(context).size;
     final userProvider = Provider.of<UserProvider>(context, listen: true);
     return Scaffold(
       appBar: AppBar(
-          centerTitle: true,
-          title: const Text('Chat Screen'),
-          backgroundColor: const Color(0xFF271160)),
+        centerTitle: true,
+        title: const Text('Chat Screen'),
+        backgroundColor: const Color(0xFF271160),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+      ),
       body: SafeArea(
         child: Container(
           color: const Color(0xFFEAEFF2),
@@ -100,9 +104,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 children: _messages.map((message) {
                                   print(message);
                                   return ChatBubble(
-                                    date: message.sentAt,
+                                    date: message.createdAt,
                                     message: message.message,
-                                    isMe: message.id == socket.id,
+                                    isMe: message.sender == userProvider.getId(),
                                   );
                                 }).toList()),
                           ],
@@ -142,20 +146,22 @@ class _ChatScreenState extends State<ChatScreen> {
                           if (_messageController.text.trim().isNotEmpty) {
                             String message = _messageController.text.trim();
 
-                            socket
-                              ..emit("message", {
-                                "roomId": widget.roomId,
-                                "userId": userProvider.getId(),
-                                ...ChatModel(
-                                        id: socket.id,
-                                        message: message,
-                                        username: userProvider.getFirstname(),
-                                        sentAt: DateTime.now()
-                                            .toLocal()
-                                            .toString()
-                                            .substring(0, 16))
-                                    .toJson()
-                              });
+                            socket.emit("message", {
+                              "room": widget.roomId,
+                              "sender": userProvider.getId(),
+                              "receiver": room['users'][0],
+                              ...ChatModel(
+                                      id: socket.id,
+                                      room: room['id'],
+                                      receiver: room['users'][0],
+                                      message: message,
+                                      sender: userProvider.getId(),
+                                      createdAt: DateTime.now()
+                                          .toLocal()
+                                          .toString()
+                                          .substring(0, 16))
+                                  .toJson()
+                            });
                             _messageController.clear();
                           }
                         },
