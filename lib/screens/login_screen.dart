@@ -71,11 +71,11 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(children: [
             const Text(
               "Login Screen",
-              style: TextStyle(color: Colors.black, fontSize: 45),
+              style: TextStyle(color: Colors.black, fontSize: 40),
             ),
             Container(
               padding: const EdgeInsets.only(top: 40),
-              width: MediaQuery.of(context).size.width / 2,
+              width: MediaQuery.of(context).size.width - 100,
               child: TextFormField(
                 initialValue: phone,
                 onChanged: (value) => {setState(() => phone = value)},
@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             Container(
               padding: const EdgeInsets.only(top: 20),
-              width: MediaQuery.of(context).size.width / 2,
+              width: MediaQuery.of(context).size.width - 100,
               child: TextFormField(
                 initialValue: password,
                 onChanged: (value) => {setState(() => password = value)},
@@ -101,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             Container(
               padding: const EdgeInsets.only(top: 20),
-              width: MediaQuery.of(context).size.width / 2,
+              width: MediaQuery.of(context).size.width - 100,
               child: TextButton(
                 child: loading
                     ? SizedBox(

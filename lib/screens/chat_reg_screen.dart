@@ -4,7 +4,7 @@ import 'package:socket_io_client/socket_io_client.dart';
 import 'package:hive/hive.dart';
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:socket_io_chat_client/models/user_model.dart';
+import '../models/user_model.dart';
 import '../provider/user_provider.dart';
 import 'chat_screen.dart';
 import '../api/user.dart';
@@ -20,7 +20,7 @@ class RegScreen extends StatefulWidget {
 
 class _RegScreenState extends State<RegScreen> {
   bool loading = false;
-  List users = [];
+  List rooms = [];
   late Socket socket;
   final box = Hive.box('testBox');
 
@@ -48,14 +48,15 @@ class _RegScreenState extends State<RegScreen> {
 
       socket.onConnect((_) {
         debugPrint('Connected ...');
-        socket.emitWithAck('rooms', '{"msg":"requesting active users"}', ack: (data) {
+        socket.emitWithAck('rooms', '{"msg":"requesting room info"}', ack: (data) {
           debugPrint('Emit with ack ...');
           if (data != null) {
             try {
               Map<String, dynamic> map = json.decode(data);
               debugPrint('Successfully got rooms data');
+              debugPrint(map.toString());
               setState(() {
-                users = map['results'];
+                rooms = map['results'];
               });
             } catch (e) {
               debugPrint('could not convert to map');
@@ -68,7 +69,7 @@ class _RegScreenState extends State<RegScreen> {
       socket.onDisconnect((_) {
         debugPrint('Disconnected ...');
         setState(() {
-          users = [];
+          rooms = [];
         });
       });
     } catch (e) {
@@ -105,91 +106,120 @@ class _RegScreenState extends State<RegScreen> {
     var size = MediaQuery.of(context).size;
     final userProvider = Provider.of<UserProvider>(context, listen: true);
     return Scaffold(
-      body: SafeArea(
-        child: Stack(children: [
+      body: Stack(fit: StackFit.expand, children: [
+        Container(
+          height: size.height,
+          width: size.width,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      userProvider.user.firstname ?? 'firstname',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text(
+                      userProvider.user.lastname ?? 'lastname',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                Text(socket.active ? 'Online' : 'Offline'),
+                Text(socket.connected ? 'Connected' : 'Disconnected'),
+                SizedBox(
+                  height: 10,
+                ),
+                ElevatedButton(
+                    onPressed: () {
+                      socket.connected ? socket.disconnect() : socket.connect();
+                    },
+                    child: Text(socket.connected ? 'Disconnect' : 'Connect')),
+                SizedBox(
+                  height: 20,
+                ),
+                Container(
+                  height: MediaQuery.of(context).size.height - 278,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: rooms.map<Widget>((item) {
+                        final user = userProvider.getId() == item['users'][0]['id']
+                            ? item['roomCreator']
+                            : item['users'][0];
+
+                        return Card(
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              radius: 40,
+                              backgroundImage: NetworkImage(user['swipePics'][0]['url']),
+                            ),
+                            title: Text('${user['firstname']} ${user['lastname']}'),
+                            subtitle: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Text('User ID : ${user['id']}'),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Text('Socket ID : ${user['connectionId']}'),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Text('Room ID : ${item['id']}'),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                              ],
+                            ),
+                            isThreeLine: true,
+                            onTap: () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => ChatScreen(
+                                        title: user['firstname'] ?? 'Chat',
+                                        socket: socket,
+                                        roomId: item['id'],
+                                      )));
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+        if (loading)
           Container(
             height: size.height,
             width: size.width,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        userProvider.user.firstname ?? 'firstname',
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Text(
-                        userProvider.user.lastname ?? 'lastname',
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Text(socket.active ? 'Online' : 'Offline'),
-                  Text(socket.connected ? 'Connected' : 'Disconnected'),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  ElevatedButton(
-                      onPressed: () {
-                        socket.connected ? socket.disconnect() : socket.connect();
-                      },
-                      child: Text(socket.connected ? 'Disconnect' : 'Connect')),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  ...users
-                      .map<Widget>((item) => Card(
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                radius: 40,
-                                backgroundImage:
-                                    NetworkImage(item['swipePics'][0]['url']),
-                              ),
-                              title: Text('${item['firstname']} ${item['lastname']}'),
-                              subtitle: Text('${item['id']} ${item['connectionId']}'),
-                              isThreeLine: true,
-                              onTap: () {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (context) => ChatScreen(
-                                          socket: socket,
-                                          roomId: item['chatroom'][0]['id'],
-                                        )));
-                              },
-                            ),
-                          ))
-                      .toList()
-                ],
-              ),
-            ),
-          ),
-          if (loading)
-            Container(
-              height: size.height,
-              width: size.width,
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.5)),
-              child: Center(
-                  child: SizedBox(
-                      height: 50, width: 50, child: CircularProgressIndicator())),
-            )
-        ]),
-      ),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.5)),
+            child: Center(
+                child:
+                    SizedBox(height: 50, width: 50, child: CircularProgressIndicator())),
+          )
+      ]),
     );
   }
 }

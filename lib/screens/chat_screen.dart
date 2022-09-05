@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart';
-import 'package:socket_io_chat_client/models/chat_model.dart';
+import '../models/chat_model.dart';
 import '../provider/user_provider.dart';
 
 class ChatScreen extends StatefulWidget {
+  final String title;
   final Socket socket;
   final String roomId;
   const ChatScreen({
     Key? key,
     required this.socket,
     required this.roomId,
+    required this.title,
   }) : super(key: key);
 
   @override
@@ -24,6 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<ChatModel> _messages = [];
   late Socket socket;
   Map<String, dynamic> room = {};
+  int chatPage = 1;
 
   // final bool _showSpinner = false;
   // final bool _showVisibleWidget = false;
@@ -39,14 +42,19 @@ class _ChatScreenState extends State<ChatScreen> {
       socket = widget.socket;
 
       socket.emitWithAck('joinRoom', {'roomId': widget.roomId}, ack: (data) {
+        List<ChatModel> messages = data['chat']['results']
+            .map<ChatModel>((item) => ChatModel.fromJson(item))
+            .toList();
+
         setState(() {
           room = data['room'];
+          _messages.addAll(messages);
         });
 
-        debugPrint('joined to room');
-        debugPrint(data.toString());
-        debugPrint('room info');
-        debugPrint(room.toString());
+        // debugPrint('joined to room');
+        // debugPrint(data.toString());
+        // debugPrint('room info');
+        // debugPrint(room.toString());
       });
 
       socket.on('message', (data) {
@@ -70,7 +78,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Chat Screen'),
+        title: Text(widget.title),
         backgroundColor: const Color(0xFF271160),
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
@@ -102,7 +110,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: _messages.map((message) {
-                                  print(message);
+                                  // print(message.toJson().toString());
                                   return ChatBubble(
                                     date: message.createdAt,
                                     message: message.message,
@@ -145,23 +153,30 @@ class _ChatScreenState extends State<ChatScreen> {
                         onPressed: () async {
                           if (_messageController.text.trim().isNotEmpty) {
                             String message = _messageController.text.trim();
+                            String sender = userProvider.getId();
+                            String receiver = room['users'][0] == sender
+                                ? room['roomCreator']
+                                : room['users'][0];
 
-                            socket.emit("message", {
-                              "room": widget.roomId,
-                              "sender": userProvider.getId(),
-                              "receiver": room['users'][0],
-                              ...ChatModel(
-                                      id: socket.id,
-                                      room: room['id'],
-                                      receiver: room['users'][0],
-                                      message: message,
-                                      sender: userProvider.getId(),
-                                      createdAt: DateTime.now()
-                                          .toLocal()
-                                          .toString()
-                                          .substring(0, 16))
-                                  .toJson()
-                            });
+                            socket.emitWithAck(
+                                "message",
+                                {
+                                  "room": widget.roomId,
+                                  "sender": sender,
+                                  "receiver": receiver,
+                                  ...ChatModel(
+                                          id: socket.id,
+                                          room: room['id'],
+                                          receiver: receiver,
+                                          message: message,
+                                          sender: sender,
+                                          createdAt: DateTime.now()
+                                              .toLocal()
+                                              .toString()
+                                              .substring(0, 16))
+                                      .toJson()
+                                },
+                                ack: (data) {});
                             _messageController.clear();
                           }
                         },
