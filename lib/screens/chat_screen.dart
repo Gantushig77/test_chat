@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart';
+import '../components/loader.dart';
 import '../models/chat_model.dart';
 import '../provider/user_provider.dart';
 
@@ -27,10 +28,8 @@ class _ChatScreenState extends State<ChatScreen> {
   late Socket socket;
   Map<String, dynamic> room = {};
   int chatPage = 1;
-
-  // final bool _showSpinner = false;
-  // final bool _showVisibleWidget = false;
-  // final bool _showErrorIcon = false;
+  int pageLength = 1;
+  bool loading = false;
 
   void setStateIfMounted(f) {
     if (mounted) setState(f);
@@ -47,14 +46,11 @@ class _ChatScreenState extends State<ChatScreen> {
             .toList();
 
         setState(() {
+          pageLength = data['chat']['totalPages'];
+          chatPage = data['chat']['page'];
           room = data['room'];
           _messages.addAll(messages);
         });
-
-        // debugPrint('joined to room');
-        // debugPrint(data.toString());
-        // debugPrint('room info');
-        // debugPrint(room.toString());
       });
 
       socket.on('message', (data) {
@@ -69,7 +65,42 @@ class _ChatScreenState extends State<ChatScreen> {
       print(e);
     }
 
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels ==
+              _scrollController.position.maxScrollExtent &&
+          !loading) {
+        debugPrint("Reached it's limit");
+        if (chatPage < pageLength) {
+          setState(() => loading = true);
+          try {
+            socket.emitWithAck(
+                'getMessage', {'roomId': widget.roomId, 'page': chatPage + 1},
+                ack: (data) {
+              List<ChatModel> messages = data['chat']['results']
+                  .map<ChatModel>((item) => ChatModel.fromJson(item))
+                  .toList();
+
+              setState(() {
+                chatPage = data['chat']['page'];
+                pageLength = data['chat']['totalPages'];
+                _messages.insertAll(0, messages);
+              });
+            });
+          } catch (e) {
+            debugPrint(e.toString());
+          }
+          setState(() => loading = false);
+        }
+      }
+    });
+
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -107,6 +138,13 @@ class _ChatScreenState extends State<ChatScreen> {
                               ? MainAxisAlignment.center
                               : MainAxisAlignment.start,
                           children: <Widget>[
+                            if (loading == true)
+                              const Loader(
+                                height: 60,
+                                row: true,
+                                progressHeight: 20,
+                                progressWidth: 20,
+                              ),
                             Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: _messages.map((message) {
