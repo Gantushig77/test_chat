@@ -111,7 +111,7 @@ class _RegScreenState extends State<RegScreen> {
           height: size.height,
           width: size.width,
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
+            margin: const EdgeInsets.only(left: 20, right: 20, top: 80),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.start,
@@ -155,7 +155,7 @@ class _RegScreenState extends State<RegScreen> {
                   height: 20,
                 ),
                 Container(
-                  height: MediaQuery.of(context).size.height - 278,
+                  // height: MediaQuery.of(context).size.height - 278,
                   child: SingleChildScrollView(
                     child: Column(
                       children: rooms.map<Widget>((item) {
