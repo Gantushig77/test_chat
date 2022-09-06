@@ -1,3 +1,4 @@
+import 'package:Chatlify/provider/socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart';
@@ -43,7 +44,7 @@ class _RegScreenState extends State<RegScreen> {
               .setExtraHeaders({'Authorization': 'Bearer ${token}'})
               .setAuth({"Authorization": 'Bearer ${token}'})
               .build());
-
+      Provider.of<SocketProvider>(context, listen: false).setSocket(socket);
       socket.connect();
 
       socket.onConnect((_) {

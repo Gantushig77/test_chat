@@ -1,3 +1,4 @@
+import 'package:Chatlify/provider/socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -38,7 +39,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     try {
-      socket = widget.socket;
+      socket = Provider.of<SocketProvider>(context, listen: false).socket;
 
       socket.emitWithAck('joinRoom', {'roomId': widget.roomId}, ack: (data) {
         List<ChatModel> messages = data['chat']['results']

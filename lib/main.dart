@@ -1,3 +1,4 @@
+import 'package:Chatlify/provider/socket_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +19,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => UserProvider()),
+          ChangeNotifierProvider(create: (_) => SocketProvider()),
         ],
         child: MaterialApp(
           title: 'Flutter Chat Demo',
