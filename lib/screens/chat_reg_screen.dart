@@ -32,6 +32,7 @@ class _RegScreenState extends State<RegScreen> {
     });
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final socketProvider = Provider.of<SocketProvider>(context, listen: false);
     final token = box.get('token')?['access_token'];
 
     try {
@@ -44,7 +45,7 @@ class _RegScreenState extends State<RegScreen> {
               .setExtraHeaders({'Authorization': 'Bearer ${token}'})
               .setAuth({"Authorization": 'Bearer ${token}'})
               .build());
-      Provider.of<SocketProvider>(context, listen: false).setSocket(socket);
+
       socket.connect();
 
       socket.onConnect((_) {
@@ -55,7 +56,7 @@ class _RegScreenState extends State<RegScreen> {
             try {
               Map<String, dynamic> map = json.decode(data);
               debugPrint('Successfully got rooms data');
-              debugPrint(map.toString());
+              // debugPrint(map.toString());
               setState(() {
                 rooms = map['results'];
               });
@@ -78,6 +79,7 @@ class _RegScreenState extends State<RegScreen> {
     }
 
     profile().then((value) {
+      socketProvider.setSocket(socket);
       userProvider.setUser(new UserModel(
         id: value?['id'],
         firstname: value?['firstname'],
@@ -95,11 +97,6 @@ class _RegScreenState extends State<RegScreen> {
     });
 
     super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   @override
@@ -156,7 +153,6 @@ class _RegScreenState extends State<RegScreen> {
                   height: 20,
                 ),
                 Container(
-                  // height: MediaQuery.of(context).size.height - 278,
                   child: SingleChildScrollView(
                     child: Column(
                       children: rooms.map<Widget>((item) {
@@ -197,7 +193,6 @@ class _RegScreenState extends State<RegScreen> {
                               Navigator.of(context).push(MaterialPageRoute(
                                   builder: (context) => ChatScreen(
                                         title: user['firstname'] ?? 'Chat',
-                                        socket: socket,
                                         roomId: item['id'],
                                       )));
                             },

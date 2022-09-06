@@ -9,11 +9,9 @@ import '../provider/user_provider.dart';
 
 class ChatScreen extends StatefulWidget {
   final String title;
-  final Socket socket;
   final String roomId;
   const ChatScreen({
     Key? key,
-    required this.socket,
     required this.roomId,
     required this.title,
   }) : super(key: key);
@@ -27,6 +25,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final List<ChatModel> _messages = [];
   late Socket socket;
+
   Map<String, dynamic> room = {};
   int chatPage = 1;
   int pageLength = 1;
@@ -39,7 +38,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     try {
-      socket = Provider.of<SocketProvider>(context, listen: false).socket;
+      var socketProvider = Provider.of<SocketProvider>(context, listen: false);
+
+      socket = socketProvider.getSocket();
 
       socket.emitWithAck('joinRoom', {'roomId': widget.roomId}, ack: (data) {
         List<ChatModel> messages = data['chat']['results']
@@ -141,7 +142,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           children: <Widget>[
                             if (loading == true)
                               const Loader(
-                                height: 60,
+                                height: 100,
                                 row: true,
                                 progressHeight: 20,
                                 progressWidth: 20,
@@ -149,7 +150,6 @@ class _ChatScreenState extends State<ChatScreen> {
                             Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: _messages.map((message) {
-                                  // print(message.toJson().toString());
                                   return ChatBubble(
                                     date: message.createdAt,
                                     message: message.message,
@@ -209,10 +209,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                           receiver: receiver,
                                           message: message,
                                           sender: sender,
-                                          createdAt: DateTime.now()
-                                              .toLocal()
-                                              .toString()
-                                              .substring(0, 16))
+                                          createdAt: DateTime.now())
                                       .toJson()
                                 },
                                 ack: (data) {});
@@ -238,7 +235,7 @@ class _ChatScreenState extends State<ChatScreen> {
 class ChatBubble extends StatelessWidget {
   final bool isMe;
   final String? message;
-  final String? date;
+  final DateTime? date;
 
   ChatBubble({
     Key? key,
@@ -290,7 +287,7 @@ class ChatBubble extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 7),
                     child: Text(
-                      date ?? '',
+                      date != null ? date.toString() : '',
                       textAlign: TextAlign.end,
                       style: const TextStyle(color: Color(0xFF594097), fontSize: 9),
                     ),
