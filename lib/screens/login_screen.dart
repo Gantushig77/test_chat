@@ -31,14 +31,10 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() {
-      loading = true;
-    });
+    setState(() => loading = true);
 
     login(phone, password).then((value) {
-      setState(() {
-        loading = false;
-      });
+      setState(() => loading = false);
       Hive.box('testBox').put('token', {
         "access_token": value?['access_token'],
         "refresh_token": value?["refresh_token"]
@@ -48,9 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.of(context).push(MaterialPageRoute(builder: (context) => RegScreen()));
     }).catchError((err) {
       debugPrint(err.toString());
-      setState(() {
-        loading = false;
-      });
+      setState(() => loading = false);
       ScaffoldMessenger.of(context)
           .showSnackBar(snackBarBody(err.message, Colors.redAccent));
     });
@@ -78,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
               width: MediaQuery.of(context).size.width - 100,
               child: TextFormField(
                 initialValue: phone,
-                onChanged: (value) => {setState(() => phone = value)},
+                onChanged: (value) => setState(() => phone = value),
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
@@ -91,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
               width: MediaQuery.of(context).size.width - 100,
               child: TextFormField(
                 initialValue: password,
-                onChanged: (value) => {setState(() => password = value)},
+                onChanged: (value) => setState(() => password = value),
                 obscureText: true,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),

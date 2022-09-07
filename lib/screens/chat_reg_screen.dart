@@ -1,10 +1,12 @@
 import 'package:Chatlify/provider/socket_provider.dart';
+import 'package:Chatlify/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 import 'package:hive/hive.dart';
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../api/auth.dart';
 import '../models/user_model.dart';
 import '../provider/user_provider.dart';
 import 'chat_screen.dart';
@@ -27,9 +29,7 @@ class _RegScreenState extends State<RegScreen> {
 
   @override
   void initState() {
-    setState(() {
-      loading = true;
-    });
+    setState(() => loading = true);
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final socketProvider = Provider.of<SocketProvider>(context, listen: false);
@@ -56,10 +56,7 @@ class _RegScreenState extends State<RegScreen> {
             try {
               Map<String, dynamic> map = json.decode(data);
               debugPrint('Successfully got rooms data');
-              // debugPrint(map.toString());
-              setState(() {
-                rooms = map['results'];
-              });
+              setState(() => rooms = map['results']);
             } catch (e) {
               debugPrint('could not convert to map');
               debugPrint(e.toString());
@@ -70,11 +67,11 @@ class _RegScreenState extends State<RegScreen> {
 
       socket.onDisconnect((_) {
         debugPrint('Disconnected ...');
-        setState(() {
-          rooms = [];
-        });
+        setState(() => rooms = []);
       });
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          snackBarBody('An error occured with server connection.', Colors.redAccent));
       debugPrint(e.toString());
     }
 
@@ -89,14 +86,22 @@ class _RegScreenState extends State<RegScreen> {
         loading = false;
       });
     }).catchError((err) {
-      setState(() {
-        loading = false;
-      });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(snackBarBody('Successfully logged in.', Colors.redAccent));
+      setState(() => loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+          snackBarBody('An error occured while getting user data.', Colors.redAccent));
     });
 
     super.initState();
+  }
+
+  void handleLogout() {
+    socket.dispose();
+    logout().then((data) {
+      Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
+    }).catchError((err) {
+      debugPrint(err.toString());
+    });
   }
 
   @override
@@ -144,11 +149,21 @@ class _RegScreenState extends State<RegScreen> {
                 SizedBox(
                   height: 10,
                 ),
-                ElevatedButton(
-                    onPressed: () {
-                      socket.connected ? socket.disconnect() : socket.connect();
-                    },
-                    child: Text(socket.connected ? 'Disconnect' : 'Connect')),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          socket.connected ? socket.disconnect() : socket.connect();
+                        },
+                        child: Text(socket.connected ? 'Disconnect' : 'Connect')),
+                    SizedBox(
+                      width: 20,
+                    ),
+                    ElevatedButton(
+                        onPressed: () => handleLogout(), child: Text('Logout')),
+                  ],
+                ),
                 SizedBox(
                   height: 20,
                 ),

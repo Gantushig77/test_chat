@@ -38,7 +38,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     try {
-      var socketProvider = Provider.of<SocketProvider>(context, listen: false);
+      final socketProvider = Provider.of<SocketProvider>(context, listen: false);
 
       socket = socketProvider.getSocket();
 
@@ -71,7 +71,6 @@ class _ChatScreenState extends State<ChatScreen> {
       if (_scrollController.position.pixels ==
               _scrollController.position.maxScrollExtent &&
           !loading) {
-        debugPrint("Reached it's limit");
         if (chatPage < pageLength) {
           setState(() => loading = true);
           try {
@@ -142,7 +141,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           children: <Widget>[
                             if (loading == true)
                               const Loader(
-                                height: 100,
+                                height: 200,
                                 row: true,
                                 progressHeight: 20,
                                 progressWidth: 20,
@@ -287,7 +286,7 @@ class ChatBubble extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 7),
                     child: Text(
-                      date != null ? date.toString() : '',
+                      date != null ? date.toString().substring(0, 16) : '',
                       textAlign: TextAlign.end,
                       style: const TextStyle(color: Color(0xFF594097), fontSize: 9),
                     ),

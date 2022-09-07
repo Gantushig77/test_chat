@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:intl/intl.dart';
-
 ChatModel chatModelFromJson(String str) => ChatModel.fromJson(json.decode(str));
 
 String chatModelToJson(ChatModel data) => json.encode(data.toJson());
@@ -24,7 +22,7 @@ class ChatModel {
   String? message;
 
   factory ChatModel.fromJson(Map<String, dynamic> json) {
-    DateTime date = new DateFormat("yyyy-MM-dd hh:mm:ss").parse(json["createdAt"]);
+    DateTime date = DateTime.parse(json["createdAt"]);
     return ChatModel(
       id: json["id"],
       room: json["room"],
